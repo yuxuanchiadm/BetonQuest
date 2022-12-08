@@ -122,6 +122,7 @@ public class CitizensHologram extends BukkitRunnable {
         updateTask = runTaskTimer(BetonQuest.getInstance(), 1, interval);
     }
 
+    @SuppressWarnings({"PMD.CognitiveComplexity"})
     private void initHologramsConfig(final QuestPackage pack, final ConfigurationSection hologramsSection) {
         for (final String key : hologramsSection.getKeys(false)) {
             final ConfigurationSection settingsSection = hologramsSection.getConfigurationSection(key);
@@ -132,7 +133,23 @@ public class CitizensHologram extends BukkitRunnable {
             final List<String> lines = settingsSection.getStringList("lines");
             final List<ConditionID> conditions = initHologramsConfigConditions(pack, key, settingsSection.getString("conditions"));
 
-            for (final int id : settingsSection.getIntegerList("npcs")) {
+            final List<Integer> npcIds;
+            if (settingsSection.isList("npcs")) {
+                npcIds = settingsSection.getIntegerList("npcs");
+            } else {
+                npcIds = new ArrayList<>();
+                final ConfigurationSection npcs = pack.getConfig().getConfigurationSection("npcs");
+                if (npcs != null) {
+                    for (final String npcID : npcs.getKeys(false)) {
+                        try {
+                            npcIds.add(Integer.parseInt(npcID));
+                        } catch (final NumberFormatException e) {
+                            LOG.debug(pack, "Could not parse number!", e);
+                        }
+                    }
+                }
+            }
+            for (final int id : npcIds) {
                 npcs.putIfAbsent(id, new ArrayList<>());
                 npcs.get(id).add(new NPCHologram(pack, vector, lines, conditions));
             }
